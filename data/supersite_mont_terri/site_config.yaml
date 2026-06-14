@@ -1,0 +1,100 @@
+# Mont Terri HE-D — site configuration for run_column_coupled
+#
+# Property values are from Garitte et al. 2017 (J. Rock Mech.
+# Geotech. Eng.) and Gens et al. 2007 (Soils & Foundations), both
+# of which characterize the Opalinus Clay around the HE-D heater
+# campaign. The site is treated as 1-D *radial* (not vertical);
+# the column_coupled solver's cylindrical path is the natural
+# target once that extension lands. For the smoke forward sweep we
+# treat the heater-to-rock distance as a pseudo-depth and use the
+# Cartesian solver path — this preserves the order-of-magnitude
+# scaling without claiming radial fidelity.
+
+site:
+  name: mont_terri_he_d
+  long_name: "Mont Terri HE-D heater experiment"
+  operator: "swisstopo / Mont Terri Consortium"
+  lat_deg: 47.235
+  lon_deg: 7.155
+  elevation_m: 950.0           # surface elevation; HE-D heater at ~700 m depth
+  class: C1                     # supersite shortlist class
+  score: 18
+
+column:
+  geometry: cylindrical         # 1-D radial around horizontal heater (target)
+  geometry_smoke: cartesian     # used by the forward driver pending cylindrical support
+  depth_max_m: 2.0              # pseudo-radial distance; the HE-D thermocouple grid spans ~1.5 m radius
+  dz_m: 0.025
+  positive_direction: away      # r increases away from heater axis
+
+# Opalinus Clay properties from Garitte 2017, Table 1, and the
+# undrained thermo-poroelastic response in their Fig 11.
+physics:
+  layers:
+    - name: "opalinus_clay"
+      z_top_m: 0.0
+      z_bottom_m: 2.0
+      porosity: 0.15            # Opalinus Clay matrix porosity
+      K_zz_m_per_s: 2.0e-13     # K (m/s); intrinsic permeability ~2e-20 m^2, very low
+      lambda_thermal_W_per_m_per_K: 2.10
+      rho_c_eff_J_per_m3_per_K: 2.30e6
+
+  fluid:
+    rho_w_kg_per_m3: 1000.0
+    mu_Pa_s: 8.0e-4              # water at 50 degC column mean
+    c_w_J_per_kg_per_K: 4186.0
+    alpha_w_per_K: 4.5e-4         # higher α_w because of the 15→100 degC range
+    beta_w_per_Pa: 4.6e-10
+    g_m_per_s2: 9.81
+
+# HE-D boundary conditions: a Dirichlet T at the heater contact
+# (r=0) ramping from 15 degC to ~100 degC over the campaign, with
+# a far-field T condition at r=depth_max_m.  Pressure: rock-saturated
+# undrained at the start; far-field neumann hydrostatic.
+boundary_conditions:
+  top:
+    T_source:
+      kind: heater_schedule
+      file: "processed/he_d_heater_T_inner.csv"  # digitized from Garitte 2017 Fig 5
+    p_source:
+      kind: digitized_initial
+      file: "processed/he_d_initial_pore_pressure.csv"
+  bottom:
+    T_kind: dirichlet_far_field
+    T_value_C: 15.0
+    p_kind: neumann_hydrostatic
+
+initial_conditions:
+  T_init:
+    kind: uniform
+    value_C: 15.0
+  p_init:
+    kind: uniform
+    value_Pa: 1.0e6                # ~1 MPa initial pore pressure in Opalinus Clay at HE-D depth
+
+time:
+  reference_date: "2004-04-01"
+  spin_up_years: 0                # not applicable; campaign-only
+  duration_years: 1.3             # April 2004 → August 2005
+  dt_s: 3600.0
+
+observations:
+  T_profile:
+    source_dataset: "Gens et al. 2007 Soils & Foundations Fig 12 (digitized)"
+    file: "processed/he_d_T_digitized.csv"
+    sigma_obs_K: 1.0              # digitization resolution
+  p_series:
+    source_dataset: "Garitte et al. 2017 JRMGE Fig 8 (digitized)"
+    file: "processed/he_d_pore_pressure_digitized.csv"
+    sigma_obs_kPa: 50.0           # ~5% of the 1-4 MPa swing
+
+ablation_sweep:
+  gamma_n_alpha_scale: [0.0, 0.25, 0.5, 0.75, 1.0]
+
+# No joint inversion for this site (digitized resolution too coarse).
+# The forward sweep is the deliverable.
+
+references:
+  - "Garitte et al. 2017, J. Rock Mech. Geotech. Eng. 9(3):485-498, doi:10.1016/j.jrmge.2017.07.001"
+  - "Gens et al. 2007, Soils & Foundations 47(1):79-98, doi:10.3208/sandf.47.79"
+  - "Supersite shortlist — Class C1, 18/20"

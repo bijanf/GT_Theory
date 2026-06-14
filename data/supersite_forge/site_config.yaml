@@ -1,0 +1,95 @@
+# Utah FORGE 16A / 16B — site configuration for run_column_coupled
+#
+# Property values from DOE Geothermal Data Repository submissions
+# 1149 (baseline T profiles) and 1326 (Phase 2C pressure history)
+# plus the FORGE characterisation papers (Moore et al. 2019,
+# Norbeck et al. 2024).
+
+site:
+  name: utah_forge_16a
+  long_name: "Utah FORGE 16A injector / 16B producer doublet"
+  operator: "University of Utah EGI under DOE GTO"
+  lat_deg: 38.504
+  lon_deg: -112.896
+  elevation_m: 1620.0
+  class: B1
+  score: 19
+
+column:
+  geometry: cartesian            # 1-D vertical column to bottomhole; not radial
+  depth_max_m: 3300.0
+  dz_m: 25.0                     # 132 cells; fine enough for the 30-s circulation data
+  positive_direction: down
+
+# Mean granitoid properties from Moore et al. 2019; Norbeck et al. 2024.
+physics:
+  layers:
+    - name: "alluvium_overburden"
+      z_top_m: 0.0
+      z_bottom_m: 200.0
+      porosity: 0.15
+      K_zz_m_per_s: 1.0e-7        # alluvial overburden moderately permeable
+      lambda_thermal_W_per_m_per_K: 2.20
+      rho_c_eff_J_per_m3_per_K: 2.40e6
+    - name: "granite_reservoir"
+      z_top_m: 200.0
+      z_bottom_m: 3300.0
+      porosity: 0.02              # granite matrix porosity; bulk is dominated by stimulated fracture network
+      K_zz_m_per_s: 5.0e-7        # effective K post-stimulation (Norbeck 2024)
+      lambda_thermal_W_per_m_per_K: 3.10
+      rho_c_eff_J_per_m3_per_K: 2.50e6
+
+  fluid:
+    rho_w_kg_per_m3: 850.0        # supercritical-ish at depth; 200 degC, 25 MPa → 850 kg/m^3
+    mu_Pa_s: 1.5e-4               # 200 degC water viscosity
+    c_w_J_per_kg_per_K: 4500.0
+    alpha_w_per_K: 1.5e-3         # high α_w at 200 degC
+    beta_w_per_Pa: 1.2e-9
+    g_m_per_s2: 9.81
+
+boundary_conditions:
+  top:
+    T_source:
+      kind: constant
+      value_C: 15.0               # surface T at Milford
+    p_source:
+      kind: constant_atmospheric
+      value_Pa: 0.0
+  bottom:
+    T_kind: dirichlet
+    T_value_C: 225.0              # bottomhole T at 3.3 km, Norbeck 2024
+    p_kind: neumann_hydrostatic
+
+initial_conditions:
+  T_init:
+    kind: linear
+    T_top_C: 15.0
+    T_bottom_C: 225.0
+  p_init:
+    kind: hydrostatic
+    p_top_Pa: 0.0
+
+time:
+  reference_date: "2024-04-01"    # start of 2024 Extended Circulation Tests
+  spin_up_years: 0
+  duration_years: 0.1             # ~5 weeks of circulation
+  dt_s: 3600.0
+
+observations:
+  T_profile:
+    source_dataset: "DOE GDR 1149 baseline + 1608 DTS during circulation"
+    file: "processed/forge_16a_T_profile_2024.nc"
+    sigma_obs_K: 0.5
+  p_series:
+    source_dataset: "DOE GDR 1326 + 1608 wellhead and downhole p"
+    file: "processed/forge_16a_pwh_2024.nc"
+    sigma_obs_kPa: 100.0
+
+ablation_sweep:
+  gamma_n_alpha_scale: [0.0, 0.25, 0.5, 0.75, 1.0]
+
+references:
+  - "DOE GDR 1149 / 1326 / 1608 / 1683 (Utah FORGE submissions)"
+  - "Moore et al. 2019, Geothermics 79:35-60"
+  - "Norbeck et al. 2024, FORGE Stimulation Test reports"
+  - "Supersite shortlist — Class B1, 19/20"

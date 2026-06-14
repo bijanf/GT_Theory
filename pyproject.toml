@@ -1,0 +1,75 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gt-theory"
+version = "0.1.0"
+description = "Coupled thermal-hydraulic continental subsurface dynamics: solver, Bayesian inversion, and empirical fingerprints."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [
+  { name = "Masoud Rostami",      email = "mrostami@lmd.ens.fr" },
+  { name = "Bijan Fallah",        email = "bijan.fallah01@gmail.com" },
+  { name = "Farahnaz Fazel-Rastgar" }
+]
+keywords = ["borehole", "permafrost", "geothermal", "subsurface", "Bayesian inversion"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Atmospheric Science",
+  "Topic :: Scientific/Engineering :: Physics"
+]
+dependencies = [
+  "numpy>=1.26",
+  "scipy>=1.12",
+  "pandas>=2.1",
+  "pyarrow>=15.0",
+  "xarray>=2024.1",
+  "netCDF4>=1.6",
+  "pyyaml>=6.0",
+  "matplotlib>=3.8",
+  "tqdm>=4.66"
+]
+
+[project.optional-dependencies]
+plot   = ["cartopy>=0.22"]
+io     = ["zarr>=2.16", "h5py>=3.10"]
+dev    = ["pytest>=8", "pytest-mpl>=0.16", "hypothesis>=6.100", "ruff>=0.4", "mypy>=1.9", "pre-commit>=3.7"]
+
+[project.urls]
+Homepage   = "https://github.com/bijanf/GT_Theory"
+Repository = "https://github.com/bijanf/GT_Theory"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gt_theory"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "NPY", "PD", "PT"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests favour terse, explicit style: single-letter math symbols (E741),
+# bare pytest.raises (PT011), and direct .values access (PD011) are intentional.
+"tests/**" = ["E741", "PT011", "PD011"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+disallow_untyped_defs  = false
+warn_unused_ignores    = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+addopts = "-ra --strict-markers"
+markers = [
+  "slow: deselect with -m 'not slow'",
+  "hpc: tests requiring PIK SSH access"
+]

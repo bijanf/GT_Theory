@@ -1,0 +1,22 @@
+# Per-rule resource overrides for the pik-hpc Snakemake profile.
+
+__default__:
+  partition: standard
+  time_min: 120
+  mem_mb: 4000
+
+make_synthetic_profile:
+  time_min: 10
+  mem_mb: 1000
+
+ingest_real_profile:
+  time_min: 30
+  mem_mb: 2000
+
+invert_profile:
+  time_min: 120
+  mem_mb: 4000
+
+gather_per_site:
+  time_min: 30
+  mem_mb: 8000

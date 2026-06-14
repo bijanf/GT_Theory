@@ -1,0 +1,149 @@
+# Umiujaq Tasiapik valley — site configuration for run_column_coupled
+#
+# Property values are seeded from:
+#   - Lemieux et al. 2016, J. Hydrol. — talik conceptual model + calibrated K
+#   - Fortier et al. 2023, WRR (10.1029/2022WR032456) — advective heat budget
+#   - Allard et al. CEN borehole logs (Nordicana D8)
+#
+# Anything tagged `# prior:` is a literature-range Bayesian prior for
+# Phase 2b joint inversion, not a deterministic input. The forward-run
+# driver in Phase 2a uses the point values under `physics.layers` /
+# `physics.fluid`.
+
+site:
+  name: umiujaq_tasiapik
+  long_name: "Umiujaq Tasiapik valley lithalsa supersite"
+  operator: "Centre d'études nordiques (CEN, Université Laval)"
+  lat_deg: 56.55
+  lon_deg: -76.55
+  elevation_m: 110.0
+  class: A1                     # supersite classification
+  score: 17                     # of 20
+
+column:
+  geometry: cartesian            # 1-D vertical; cylindrical reserved for Mont Terri
+  depth_max_m: 20.0              # talik + lithalsa core, below the bedrock contact at ~22 m
+  dz_m: 0.10                     # 200 cells; matches Fortier 2023 borehole sampling
+  positive_direction: down       # z increases downward; z=0 is GST
+
+# Layer-stratified bulk properties.  z_top_m / z_bottom_m are depths
+# below GST.  Values are seeded from Lemieux 2016 calibration + CEN
+# borehole logs; refine in Phase 2b.
+physics:
+  layers:
+    - name: "organic_surface"
+      z_top_m: 0.0
+      z_bottom_m: 0.5
+      porosity: 0.55              # peaty surface
+      K_zz_m_per_s: 5.0e-5        # high-permeability organic mat
+      lambda_thermal_W_per_m_per_K: 0.40
+      rho_c_eff_J_per_m3_per_K: 2.2e6
+    - name: "silt_aquifer_talik"
+      z_top_m: 0.5
+      z_bottom_m: 10.0
+      porosity: 0.40              # Lemieux 2016 calibrated silt aquifer
+      K_zz_m_per_s: 5.0e-6        # Lemieux 2016 calibration; central value
+      lambda_thermal_W_per_m_per_K: 1.80
+      rho_c_eff_J_per_m3_per_K: 2.5e6
+    - name: "frozen_silt_till"
+      z_top_m: 10.0
+      z_bottom_m: 18.0
+      porosity: 0.30
+      K_zz_m_per_s: 1.0e-9        # effectively impermeable when frozen
+      lambda_thermal_W_per_m_per_K: 2.80
+      rho_c_eff_J_per_m3_per_K: 2.0e6
+    - name: "bedrock_weathered"
+      z_top_m: 18.0
+      z_bottom_m: 20.0
+      porosity: 0.05
+      K_zz_m_per_s: 1.0e-10
+      lambda_thermal_W_per_m_per_K: 3.20
+      rho_c_eff_J_per_m3_per_K: 2.3e6
+
+  fluid:
+    rho_w_kg_per_m3: 1000.0
+    mu_Pa_s: 1.3e-3              # water at ~5 degC (column-mean talik T)
+    c_w_J_per_kg_per_K: 4186.0
+    alpha_w_per_K: 2.1e-4         # thermal expansion of water at 5 degC
+    beta_w_per_Pa: 4.6e-10        # isothermal compressibility
+    g_m_per_s2: 9.81
+
+boundary_conditions:
+  top:
+    T_source:
+      kind: nordicana_d9          # near-surface T from D9 ground-surface stations
+      station: "VDTSYBU"          # lithalsa mound surface station (HT-234 fallback)
+      file: "processed/d9_VDTSYBU_Tsurf_daily.nc"
+    p_source:
+      kind: constant_atmospheric
+      value_Pa: 0.0               # gauge pressure at GST; talik is unconfined at top
+  bottom:
+    T_kind: neumann_zero          # insulating (geothermal flux absorbed by long warm-up spin-up)
+    p_kind: neumann_hydrostatic   # solver default — drains to hydrostatic gradient
+
+initial_conditions:
+  T_init:
+    kind: from_borehole_profile
+    file: "processed/vdtbs_T_profile_init.nc"  # first 24 h average from dataset 1
+    fallback_kind: linear
+    fallback_T_top_C: 0.0
+    fallback_T_bottom_C: -2.0
+  p_init:
+    kind: hydrostatic
+    p_top_Pa: 0.0
+
+time:
+  reference_date: "2012-08-01"    # first day of Immatsiak piezometer record
+  spin_up_years: 5
+  duration_years: 10              # 2012-08 → 2022-08 (full Immatsiak window)
+  dt_s: 3600.0                    # 1-hour internal step
+
+# Observation manifests for the joint inversion.  Paths are relative
+# to data/supersite_umiujaq/processed/.
+observations:
+  T_profile:
+    source_dataset: "Borealis 10.5683/SP3/QSRW0I"
+    file: "processed/vdtbs_T_profile.nc"
+    depths_m: [0.5, 1.0, 2.0, 3.0, 5.0, 7.0, 10.0, 15.0, 18.0]   # placeholder — confirm against bundled README.pdf
+    sigma_obs_K: 0.10
+  p_series:
+    source_dataset: "Nordicana D19 10.5885/45309SL-15611D6EC6D34E23"
+    file: "processed/immatsiak1_head.nc"
+    station: "Immatsiak_1"
+    depth_screen_m: 5.0           # piezometer screen depth; confirm in raw metadata
+    sigma_obs_kPa: 1.0
+
+# Coupling-knob sweep for Phase 2a ablation runs.  Knob multiplies both
+# cross-coupling terms (advective enthalpy + thermal-expansion in the
+# pressure equation) via gamma_n_alpha_scale.
+ablation_sweep:
+  gamma_n_alpha_scale: [0.0, 0.25, 0.5, 0.75, 1.0]
+
+# Phase 2b inversion: reduced parameter vector + priors.
+inversion:
+  reduced_parameters:
+    - name: log10_K_zz_silt
+      layer: "silt_aquifer_talik"
+      prior: {kind: uniform, low: -7.0, high: -4.0}   # 10^-7 .. 10^-4 m/s; brackets Lemieux 2016
+    - name: porosity_silt
+      layer: "silt_aquifer_talik"
+      prior: {kind: uniform, low: 0.30, high: 0.50}
+    - name: lambda_silt
+      layer: "silt_aquifer_talik"
+      prior: {kind: uniform, low: 1.20, high: 2.50}   # W/m/K
+    - name: gst_offset_K
+      description: "additive offset on Nordicana D9 GST forcing"
+      prior: {kind: normal, mu: 0.0, sigma: 0.5}
+    - name: gamma_n_alpha_scale
+      description: "coupling-knob; the manuscript's headline parameter"
+      prior: {kind: uniform, low: 0.0, high: 2.0}
+  walkers: 256
+  steps: 200
+  burn_in_frac: 0.3
+
+# Cross-references (for editors only; not parsed by the solver driver)
+references:
+  - "Lemieux et al. 2016, J. Hydrol. — talik aquifer calibration"
+  - "Fortier et al. 2023, WRR doi:10.1029/2022WR032456 — advective heat ~½ of mound thaw"
+  - "Supersite shortlist — Class A1, 17/20"
+  - "Solver discretisation — see the accompanying paper"

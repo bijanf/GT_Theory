@@ -1,0 +1,114 @@
+# Top-level Snakemake DAG for the GT_Theory empirical-validation pipeline.
+#
+# Targets
+# -------
+# - smoke-synthetic : generate N synthetic boreholes, forward-simulate them
+#                     with column_1d and invert with bayes; no external data
+#                     required.  This is what CI runs.
+# - smoke-10        : 10-site stratified subset from the curated catalog,
+#                     runnable on a laptop in ~10 min once CRU TS forcing is
+#                     wired (see #23).
+# - full            : all ~950 sites; submit to PIK HPC via the pik-hpc
+#                     profile.
+# - figures         : render the figure suite from cached fingerprint outputs.
+#
+# All outputs land under ``outputs/`` (gitignored).  Caching is content-based;
+# rerun only what changed.
+
+from pathlib import Path
+
+import yaml
+
+# ------------------------------------------------------------- config
+
+# Inline defaults; a future ``config/default.yaml`` can be wired in once
+# subset overrides become useful for CLI runs.
+config.setdefault("subset", "smoke-synthetic")
+config.setdefault("n_synthetic_sites", 8)
+config.setdefault("kappa_m2_s", 1.0e-6)
+config.setdefault("n_bootstrap", 120)
+config.setdefault("seed_base", 20260522)
+config.setdefault("outputs_root", "outputs")
+
+OUTPUTS = Path(config["outputs_root"])
+CATALOG_PATH = workflow.source_path("../catalogs/boreholes.yaml")
+
+# Load the catalog once so rules can reach into named subsets.
+with open(CATALOG_PATH) as fh:
+    _CATALOG = yaml.safe_load(fh)
+SUBSETS = _CATALOG.get("subsets", {}) or {}
+
+SYNTHETIC_IDS = [f"SYN-{i:03d}" for i in range(config["n_synthetic_sites"])]
+SMOKE_10_IDS = SUBSETS.get("smoke-10", [])
+
+
+def _load_full_subset() -> list[str]:
+    """Read catalogs/all_sites.csv and return the list of site_ids with
+    valid lat/lon entries.  Falls back to smoke-10 if the CSV is missing."""
+    csv_path = Path(workflow.basedir, "..", "catalogs", "all_sites.csv").resolve()
+    if not csv_path.exists():
+        return SMOKE_10_IDS
+    import csv
+
+    ids: list[str] = []
+    with csv_path.open() as fh:
+        reader = csv.DictReader(fh)
+        for row in reader:
+            sid = (row.get("site_id") or "").strip()
+            lat = (row.get("lat_deg") or "").strip()
+            lon = (row.get("lon_deg") or "").strip()
+            if sid and lat and lon:
+                ids.append(sid)
+    return ids
+
+
+def site_ids_for(subset_name: str) -> list[str]:
+    if subset_name == "smoke-synthetic":
+        return SYNTHETIC_IDS
+    if subset_name == "smoke-10":
+        return SMOKE_10_IDS
+    if subset_name == "full":
+        return SUBSETS.get("full") or _load_full_subset()
+    if subset_name in SUBSETS:
+        return SUBSETS[subset_name]
+    raise ValueError(f"Unknown subset: {subset_name!r}")
+
+
+# ------------------------------------------------------------- includes
+
+include: "rules/ingest.smk"
+include: "rules/solve.smk"
+include: "rules/fingerprints.smk"
+include: "rules/figures.smk"
+
+
+# ------------------------------------------------------------- top-level targets
+
+
+rule all:
+    input:
+        OUTPUTS / "smoke-synthetic" / "summary.parquet",
+
+
+rule smoke_synthetic:
+    """End-to-end synthetic smoke: forward + invert N synthetic sites."""
+    input:
+        OUTPUTS / "smoke-synthetic" / "summary.parquet",
+
+
+rule smoke_10:
+    """Smoke run on the 10-site curated subset (laptop)."""
+    input:
+        OUTPUTS / "smoke-10" / "summary.parquet",
+
+
+rule full:
+    """Full archive run (PIK HPC, ~800-950 sites)."""
+    input:
+        OUTPUTS / "full" / "summary.parquet",
+
+
+rule figures_only:
+    """Render every figure from cached fingerprint outputs."""
+    input:
+        OUTPUTS / "figures" / ".sentinel",

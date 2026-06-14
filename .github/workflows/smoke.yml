@@ -1,0 +1,59 @@
+name: smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  snakemake-smoke-synthetic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install runtime + snakemake
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]" "snakemake>=8"
+
+      - name: Run smoke-synthetic snakemake target
+        run: |
+          PYTHONPATH=src snakemake -s workflows/Snakefile \
+            smoke_synthetic --cores 2
+
+      - name: Render figures from smoke outputs
+        run: |
+          mkdir -p outputs/figures
+          PYTHONPATH=src python figures/ed1_synthetic_twin.py \
+            --out outputs/figures/ed1_synthetic_twin.pdf
+          PYTHONPATH=src python figures/ed2_carslaw_jaeger.py \
+            --out outputs/figures/ed2_carslaw_jaeger.pdf
+
+      - name: Verify outputs were produced
+        run: |
+          test -s outputs/smoke-synthetic/summary.parquet
+          test -s outputs/figures/ed1_synthetic_twin.pdf
+          test -s outputs/figures/ed2_carslaw_jaeger.pdf
+
+      - name: Upload smoke figures as PR artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-figures-py3.11
+          path: |
+            outputs/smoke-synthetic/summary.parquet
+            outputs/figures/*.pdf
+          retention-days: 14

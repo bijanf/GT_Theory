@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: >-
+  GT_Theory — Empirical validation pipeline for coupled thermal-hydraulic
+  continental subsurface dynamics
+message: >-
+  If you use this software or its accompanying manuscript, please cite both
+  the manuscript and this repository (Zenodo DOI on release).
+type: software
+authors:
+  - given-names: Masoud
+    family-names: Rostami
+    affiliation: >-
+      LMD/IPSL, ENS-PSL Université, École Polytechnique, Sorbonne Université,
+      CNRS, Paris
+    email: mrostami@lmd.ens.fr
+  - given-names: Bijan
+    family-names: Fallah
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    email: bijan.fallah01@gmail.com
+  - given-names: Farahnaz
+    family-names: Fazel-Rastgar
+    affiliation: University of KwaZulu-Natal, Durban
+repository-code: 'https://github.com/bijanf/GT_Theory'
+license: MIT

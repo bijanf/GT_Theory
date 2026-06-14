@@ -1,0 +1,21 @@
+{
+  "title": "GT_Theory — Empirical validation pipeline for coupled thermal-hydraulic continental subsurface dynamics",
+  "description": "Software accompanying the manuscript on integrated interface dynamics (LSAI/SWRI/CMI) and the nine dimensionless numbers that partition the continental subsurface into predicted regimes. Implements 1-D finite-volume and Crank–Nicolson forward solvers with freeze–thaw phase change, hierarchical Bayesian inversion of borehole temperature profiles, and six empirical fingerprints against a global borehole archive.",
+  "license": "MIT",
+  "upload_type": "software",
+  "access_right": "open",
+  "keywords": [
+    "continental subsurface",
+    "borehole inversion",
+    "thermal-hydraulic coupling",
+    "permafrost",
+    "geothermal",
+    "Crank-Nicolson",
+    "Bayesian inversion"
+  ],
+  "creators": [
+    {"name": "Rostami, Masoud", "affiliation": "LMD/IPSL, ENS-PSL"},
+    {"name": "Fallah, Bijan",  "affiliation": "PIK"},
+    {"name": "Fazel-Rastgar, Farahnaz", "affiliation": "University of KwaZulu-Natal"}
+  ]
+}

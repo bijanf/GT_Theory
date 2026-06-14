@@ -1,0 +1,38 @@
+# Snakemake profile for submitting the per-site solve / invert rules to
+# the PIK HPC via the configured SSH alias `login01`.
+#
+# Usage:
+#   pixi run snakemake -s workflows/Snakefile --profile workflows/profiles/pik-hpc full
+#
+# Prerequisite: ~/.ssh/config has a `login01` block with ControlMaster
+# auto + ControlPersist (the existing GT_Theory project setup).
+#
+# Outputs land under $WORK/gt_theory/<git_sha>/ on PIK; a separate
+# rsync_back step (TODO: rules/sync.smk) pulls posterior summaries back
+# to the laptop.
+
+# Run rules on the cluster by wrapping sbatch over SSH.  Snakemake's
+# generic cluster invocation pattern keeps us out of any plugin dance.
+cluster: >
+  ssh login01 sbatch
+  --partition={resources.slurm_partition}
+  --time={resources.time_min}
+  --mem={resources.mem_mb}
+  --output=$HOME/snakemake-jobs/{rule}-{jobid}.out
+  --parsable
+
+cluster-status: "ssh login01 sacct -j {jobid} --format=State --noheader | head -1"
+cluster-cancel: "ssh login01 scancel"
+
+jobs: 200
+restart-times: 1
+latency-wait: 60
+keep-going: true
+rerun-incomplete: true
+use-conda: false
+printshellcmds: true
+
+default-resources:
+  - slurm_partition=standard
+  - time_min=120
+  - mem_mb=4000

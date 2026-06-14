@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+.pixi/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+htmlcov/
+
+# LaTeX
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.nav
+*.snm
+*.vrb
+
+# Data (heavy; tracked via DVC, not git)
+data/raw/
+data/processed/
+data/external/
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/external/.gitkeep
+
+# Supersite raw downloads (heavy; track README + site_config only)
+data/supersite_*/raw/
+data/supersite_*/processed/
+
+# Outputs (generated; reproducible from pipeline)
+outputs/
+!outputs/.gitkeep
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Secrets
+.env
+.env.local
+*.pem
+*.key
+
+# Snakemake
+.snakemake/

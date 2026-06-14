@@ -1,0 +1,136 @@
+# Borehole catalog for the GT_Theory empirical-validation pipeline.
+#
+# Source archive: NOAA Paleoclimatology / Huang-Pollack 2000-2013 global
+# borehole temperature compilation (952 files).  See
+# https://www.ncei.noaa.gov/access/paleo-search/study/1000889.
+#
+# The full 952-site list is materialised lazily from the raw archive by
+# ``gt_theory.catalog.load_full_subset()``.  Curated subsets (``smoke-10``,
+# ``smoke-100``, ``permafrost``, ``arid``, ...) are listed explicitly below
+# so they are stable across archive updates.
+#
+# QC tiers
+# --------
+# 1 (primary):   max_depth >= 300 m, ~ uniform sampling, no flagged anomaly.
+# 2 (secondary): max_depth in [200, 300) m or sparse near-surface sampling.
+# 3 (excluded):  data quality issues; not used for fingerprints.
+
+schema_version: 1
+
+# Resolve borehole file paths relative to this root.  The path can be
+# overridden at runtime by the GT_THEORY_BOREHOLE_ROOT environment variable.
+default_data_root: "data/raw/boreholes/huang2000"
+
+subsets:
+
+  # Ten-site stratified smoke subset spanning latitudes -34 to +56 and
+  # every continent except Antarctica.  Used by the smoke-10 Snakemake
+  # target on the laptop and by the smoke.yml CI workflow.
+  smoke-10:
+    - AU-10
+    - BR-574
+    - CA-0001
+    - CN-FJ-anxi3101
+    - CZ-127127
+    - IN-AN8
+    - JP-Aso
+    - RU-14
+    - US-AL7-6
+    - ZA-AD3
+
+# Per-site metadata.  Curated entries below are the smoke-10 subset; the
+# rest of the 952 sites are loaded directly from the archive headers at
+# runtime.  Fields here override the parsed header values, which is the
+# escape hatch for hand-corrected lat/lon or QC tier downgrades.
+
+sites:
+
+  AU-10:
+    country: Australia
+    lat_deg: -34.00
+    lon_deg: 151.25
+    max_depth_m: 449.58
+    measurement_year: 1972.51
+    qc_tier: 1
+    notes: ""
+
+  BR-574:
+    country: Brazil
+    lat_deg: -13.50
+    lon_deg: -48.25
+    max_depth_m: 220.0
+    measurement_year: 1976.0
+    qc_tier: 2
+    notes: "tropical low-latitude reference"
+
+  CA-0001:
+    country: Canada
+    lat_deg: 51.13
+    lon_deg: -93.94
+    max_depth_m: 510.2
+    measurement_year: 2000.48
+    qc_tier: 1
+    notes: ""
+
+  CN-FJ-anxi3101:
+    country: China
+    lat_deg: 25.23
+    lon_deg: 117.72
+    max_depth_m: 530.0
+    measurement_year: 1986.86
+    qc_tier: 1
+    notes: ""
+
+  CZ-127127:
+    country: Czech Republic
+    lat_deg: 50.73
+    lon_deg: 14.87
+    max_depth_m: 440.0
+    measurement_year: 1980.49
+    qc_tier: 1
+    notes: "mid-latitude continental"
+
+  IN-AN8:
+    country: India
+    lat_deg: 19.60
+    lon_deg: 74.79
+    max_depth_m: 201.0
+    measurement_year: 1994.0
+    qc_tier: 2
+    notes: "minimum depth for tier-1 not met"
+
+  JP-Aso:
+    country: Japan
+    lat_deg: 35.99
+    lon_deg: 140.49
+    max_depth_m: 216.0
+    measurement_year: 2000.04
+    qc_tier: 2
+    notes: ""
+
+  RU-14:
+    country: Russia
+    lat_deg: 55.50
+    lon_deg: 59.83
+    max_depth_m: 600.0
+    measurement_year: 1975.0
+    qc_tier: 1
+    notes: "Urals, mid-latitude Russia"
+
+  US-AL7-6:
+    country: United States
+    lat_deg: 33.27
+    lon_deg: -86.02
+    max_depth_m: 596.8
+    measurement_year: 1966.26
+    qc_tier: 1
+    notes: ""
+
+  ZA-AD3:
+    country: South Africa
+    lat_deg: -24.92
+    lon_deg: 29.15
+    max_depth_m: 500.0
+    measurement_year: 1989.0
+    qc_tier: 1
+    notes: ""
